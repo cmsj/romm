@@ -1,56 +1,70 @@
 <script setup lang="ts">
-import configApi from "@/services/api/config";
-import storeConfig from "@/stores/config";
 import type { Events } from "@/types/emitter";
 import type { Emitter } from "mitt";
-import { inject, ref } from "vue";
+import { inject, onBeforeUnmount, ref } from "vue";
+import platformApi from "@/services/api/platform";
 
 // Props
 const show = ref(false);
-const configStore = storeConfig();
-const emitter = inject<Emitter<Events>>("emitter");
 const fsSlugToCreate = ref();
 const slugToCreate = ref();
-emitter?.on("showCreatePlatformBindingDialog", ({ fsSlug = "", slug = "" }) => {
-  fsSlugToCreate.value = fsSlug;
-  slugToCreate.value = slug;
+const emitter = inject<Emitter<Events>>("emitter");
+emitter?.on("showAddPlatformDialog", () => {
   show.value = true;
 });
 
 // Functions
-function addBindPlatform() {
-  configApi
-    .addPlatformBindConfig({
-      fsSlug: fsSlugToCreate.value,
-      slug: slugToCreate.value,
-    })
+function addPlatform() {
+  platformApi
+    .uploadPlatform({ fsSlug: fsSlugToCreate.value })
     .then(() => {
-      configStore.addPlatformBinding(fsSlugToCreate.value, slugToCreate.value);
-    })
-    .catch(({ response, message }) => {
       emitter?.emit("snackbarShow", {
-        msg: `${response?.data?.detail || response?.statusText || message}`,
+        msg: `Platform ${fsSlugToCreate.value} created successfully!`,
+        icon: "mdi-check-bold",
+        color: "green",
+        timeout: 2000,
+      });
+      closeDialog();
+    })
+    .catch((error) => {
+      console.log(error);
+      emitter?.emit("snackbarShow", {
+        msg: error.response.data.detail,
         icon: "mdi-close-circle",
         color: "red",
-        timeout: 4000,
       });
+    })
+    .finally(() => {
+      emitter?.emit("showLoadingDialog", { loading: false, scrim: false });
     });
-  closeDialog();
 }
 
 function closeDialog() {
   show.value = false;
+  fsSlugToCreate.value = null;
 }
+
+onBeforeUnmount(() => {
+  emitter?.off("showAddPlatformDialog");
+});
 </script>
+
 <template>
-  <v-dialog v-model="show" max-width="500px" :scrim="true">
+  <v-dialog
+    :modelValue="show"
+    max-width="500px"
+    scroll-strategy="none"
+    :scrim="true"
+    @click:outside="closeDialog"
+    @keydown.esc="closeDialog"
+    no-click-animation
+    persistent
+  >
     <v-card>
       <v-toolbar density="compact" class="bg-terciary">
         <v-row class="align-center" no-gutters>
           <v-col cols="10">
-            <v-icon icon="mdi-controller" class="ml-5" />
-            <v-icon icon="mdi-menu-right" class="ml-1 text-romm-gray" />
-            <v-icon icon="mdi-controller" class="ml-1 text-romm-accent-1" />
+            <v-icon icon="mdi-controller" class="ml-5 mr-2" />
           </v-col>
           <v-col>
             <v-btn
@@ -71,19 +85,7 @@ function closeDialog() {
           <v-text-field
             @keyup.enter=""
             v-model="fsSlugToCreate"
-            label="Folder name"
-            variant="outlined"
-            required
-            hide-details
-          />
-          <v-icon icon="mdi-menu-right" class="mx-2 text-romm-gray" />
-          <v-text-field
-            class="text-romm-accent-1"
-            @keyup.enter=""
-            v-model="slugToCreate"
-            label="RomM platform"
-            color="romm-accent-1"
-            base-color="romm-accent-1"
+            label="Platform name (folder name)"
             variant="outlined"
             required
             hide-details
@@ -92,7 +94,7 @@ function closeDialog() {
         <v-row class="justify-center pa-2" no-gutters>
           <v-btn @click="closeDialog" class="bg-terciary">Cancel</v-btn>
           <v-btn
-            @click="addBindPlatform()"
+            @click="addPlatform()"
             class="text-romm-green bg-terciary ml-5"
           >
             Confirm
@@ -102,3 +104,5 @@ function closeDialog() {
     </v-card>
   </v-dialog>
 </template>
+
+<style scoped></style>
