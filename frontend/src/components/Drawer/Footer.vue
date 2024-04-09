@@ -26,7 +26,9 @@ function dismissNewVersion() {
   newVersionDismissed.value = true;
 }
 
-async function logout() {
+async function logout(event: MouseEvent) {
+  event.preventDefault();
+  event.stopPropagation();
   identityApi
     .logout()
     .then(({ data }) => {
@@ -72,7 +74,7 @@ async function logout() {
         v-if="!rail"
         variant="text"
         icon="mdi-location-exit"
-        @click="logout()"
+        @click="logout"
       ></v-btn>
     </template>
   </v-list-item>
@@ -82,7 +84,7 @@ async function logout() {
     variant="text"
     icon="mdi-location-exit"
     block
-    @click="logout()"
+    @click="logout"
   ></v-btn>
   <v-list-item
     class="bg-terciary py-1 px-1 text-subtitle-2"
