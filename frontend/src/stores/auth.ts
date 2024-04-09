@@ -1,6 +1,5 @@
+import type { User } from "@/stores/users";
 import { defineStore } from "pinia";
-
-import type { User } from "./users";
 
 const FULL_SCOPES_LIST = [
   "me.read",

@@ -47,7 +47,7 @@ async function logout() {
 </script>
 
 <template>
-  <v-list-item height="60" class="bg-primary text-button" rounded="0">
+  <v-list-item height="60" class="bg-primary text-button" rounded="0" @click="emitter?.emit('showEditUserDialog', auth.user)">
     <template v-if="!rail">
       <div class="text-no-wrap text-truncate text-subtitle-1">
         {{ auth.user?.username }}
